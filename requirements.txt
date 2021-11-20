@@ -19,3 +19,5 @@ setuptools==58.2.0
 tensorboardX==2.4
 tqdm==4.62.3
 types-PyYAML==5.4.11
+imageio
+dgl
