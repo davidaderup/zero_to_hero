@@ -33,7 +33,7 @@ class WildlifeDataset(Dataset):
         :param targets: np.ndarray with shape (n_samples, 1)
         """
         self.data = data
-        self.size = self.data.shape[0]
+        self.size = targets.shape[0]
         if targets is not None:
             assert self.size == targets.shape[0], "Number of input data is not equal to the number of targets"
         self.targets = targets
@@ -52,7 +52,10 @@ class WildlifeDataset(Dataset):
         :return: (datum, target)
         """
         if self.targets is not None:
-            return self.data[idx], self.targets[idx]
+            data = np.array(imageio.imread(self.data[idx])[:,:, 0].astype(np.float32))
+            data = data.reshape((1, data.shape[0], data.shape[1]))
+            return data, self.targets[idx]
+            # return self.data[idx], self.targets[idx]
         return self.data[idx]
 
 
@@ -113,7 +116,7 @@ class WildlifeDataModule(pl.LightningDataModule):
 
         for ind, frame_filepath in enumerate(frame_filepaths):
 
-            frame_img = imageio.imread(frame_filepath)
+            # frame_img = imageio.imread(frame_filepath)
 
             frame_index = ind # int(frame_filepath.stem.split("___")[-1])
 
@@ -126,7 +129,7 @@ class WildlifeDataModule(pl.LightningDataModule):
             else:
                 label = False
 
-            frame_dict[frame_index] = {"img": frame_img,
+            frame_dict[frame_index] = {"path": frame_filepath,
                                        "label": label}
         return frame_dict
 
@@ -136,11 +139,13 @@ class WildlifeDataModule(pl.LightningDataModule):
         :return: (features, target)
         """
         frame_dicts = self.load_frames(data_path)
-        data_list = [frame_dict["img"][:, :, 0] for _, frame_dict in frame_dicts.items()]
+        # data_list = [frame_dict["img"][:, :, 0] for _, frame_dict in frame_dicts.items()]
+        data_list = [frame_dict["path"] for _, frame_dict in frame_dicts.items()]
         target_list = [frame_dict["label"] for _, frame_dict in frame_dicts.items()]
-        data = np.stack(data_list, axis=-1).transpose()
-        data = np.reshape(data, (data.shape[0], 1, data.shape[1], data.shape[2])).astype(np.float32)
+        #data = np.stack(data_list, axis=-1).transpose()
+        #data = np.reshape(data, (data.shape[0], 1, data.shape[1], data.shape[2])).astype(np.float32)
         targets = np.hstack(target_list).astype(np.int64)
+        data = data_list
         return data, targets
 
     def train_dataloader(self) -> TRAIN_DATALOADERS:
